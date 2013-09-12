@@ -4,7 +4,7 @@ Donate link:
 Tags: payment gateway, khipu, woocommerce, chile
 Requires at least: 3.3
 Tested up to: 3.5.1
-Stable tag: 1.0
+Stable tag: 1.1
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -12,7 +12,7 @@ Permite el uso de khipu en WooCommerce, khipu es un medio de pago que permite pa
 
 == Description ==
 
-Permite el uso de khipu en WooCommerce, khipu es un medio de pago que permite pagar usando Cuentas Bancarias Chilenas.
+Permite el uso de [khipu](https://khipu.com) en WooCommerce, [khipu es un medio de pago que permite pagar usando Cuentas Bancarias Chilenas](https://khipu.com).
 
 == Installation ==
 
