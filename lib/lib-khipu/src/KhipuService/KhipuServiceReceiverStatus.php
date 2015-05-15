@@ -10,38 +10,33 @@
 require_once 'KhipuService.php';
 
 /**
- * Servicio KhipuServiceSetRejectedByPayer extiende de KhipuService
+ * Servicio ReceiverStatus extiende de KhipuService
  *
- * Este servicio marca un pago como rechazado
+ * Esta clase verifica el estado y algunas capacidades de una cuenta khipu
  */
-class KhipuServiceSetRejectedByPayer extends KhipuService {
+class KhipuServiceReceiverStatus extends KhipuService {
+
+
   /**
    * Iniciamos el servicio
    */
   public function __construct($receiver_id, $secret) {
     parent::__construct($receiver_id, $secret);
     // Asignamos la url del servicio
-    $this->apiUrl = Khipu::getUrlService('SetRejectedByPayer');
-    $this->data = array(
-      'payment_id'  => '',
-      'text'        => '',
-    );
+    $this->apiUrl = Khipu::getUrlService('ReceiverStatus');
   }
 
   /**
-   * Método que envia la solicitud
-   *
-   * @return bool
+   * Método que consulta por el estado
    */
-  public function set() {
+  public function consult() {
     $string_data = $this->dataToString();
 
     $data_to_send = array(
       'hash' => $this->doHash($string_data),
       'receiver_id' => $this->receiver_id,
-      'payment_id' => $this->data['payment_id'],
-      'text'       => $this->data['text'],
     );
+    $data_to_send['agent'] = $this->agent;
 
     $ch = curl_init();
     curl_setopt($ch, CURLOPT_URL, $this->apiUrl);
@@ -49,19 +44,16 @@ class KhipuServiceSetRejectedByPayer extends KhipuService {
     curl_setopt($ch, CURLOPT_POST, TRUE);
     curl_setopt($ch, CURLOPT_POSTFIELDS, $data_to_send);
 
-    $this->message = curl_exec($ch);
+    $output = curl_exec($ch);
     $info = curl_getinfo($ch);
     curl_close($ch);
 
-    return $info['http_code'] == 200;
+    return $output;
   }
 
   protected function dataToString() {
     $string = '';
     $string .= 'receiver_id='     . $this->receiver_id;
-    $string .= '&payment_id='     . $this->data['payment_id'];
-    $string .= '&text='           . $this->data['text'];
-    $string .= '&secret='         . $this->secret;
     return trim($string);
   }
 }

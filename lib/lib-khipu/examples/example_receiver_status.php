@@ -27,7 +27,7 @@
             <label class="label-example">Llave</label>
             <input required size="43" type="textfield" name="secret" value="<?php print isset($_POST['secret']) ? $_POST['secret'] : '';?>"/>
           </div>
-          <input type="submit" value="Consultar pago"/>
+          <input type="submit" value="Consultar Estado"/>
         </form>
         <?php if (isset($_POST['receiver_id']) && isset($_POST['secret'])) :?>
           <div>Respuesta:

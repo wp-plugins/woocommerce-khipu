@@ -21,12 +21,12 @@ class Khipu
   /**
    * Version del servicio de Khipu.
    */
-  const VERSION_KHIPU_SERVICE = '1.1';
+  const VERSION_KHIPU_SERVICE = '1.3';
 
   /**
    * Version
    */
-  const VERSION = '1.1.2';
+  const VERSION = '1.3';
 
   /**
    * Corresponde a la ID del cobrador.
@@ -57,6 +57,13 @@ class Khipu
     $this->secret = $secret;
   }
 
+  protected $agent = 'lib-php-1.3';
+
+  public function setAgent($agent) {
+      $this->agent = 'lib-php-1.3 - '.$agent;
+      return $this;
+  }
+
   /**
    * Carga el servicio y retorna el objeto, en caso de no existir el servicio,
    * se invoca un excepcion.
@@ -77,14 +84,17 @@ class Khipu
       if ($services_name[$service_name]) {
         // Es requerido identificarse para usar estos servicios.
         if ($this->receiver_id && $this->secret) {
-          return new $class($this->receiver_id, $this->secret);
+          $service = new $class($this->receiver_id, $this->secret);
+        } else {
+            // Invocamos un Exception
+            throw new Exception("Is necessary to authenticate to use the service \"$service_name\"");
         }
-        // Invocamos un Exception
-        throw new Exception("Is necessary to authenticate to use the service \"$service_name\"");
       }
       else {
-        return new $class();
+        $service = new $class();
       }
+        $service->setAgent($this->agent);
+        return $service;
     }
     // Si no existe el servicio se invoca un Exception
     throw new Exception("The service \"$service_name\" does not exist");
@@ -102,10 +112,11 @@ class Khipu
 
     $services_name = self::getAllServicesName();
 
-    if (array_key_exists($service_name, $services_name)) {
-      return $url_khipu . lcfirst($service_name);
+    if (array_key_exists($service_name, $services_name)) { 
+       $str = $service_name;
+       $str[0] = strtolower($str[0]);
+       return $url_khipu . (string)$str;
     }
-
     return FALSE;
   }
 
@@ -118,13 +129,16 @@ class Khipu
     return array(
       'CreateEmail' => TRUE,
       'CreatePaymentPage' => TRUE,
+      'CreatePaymentURL' => TRUE,
       'VerifyPaymentNotification' => FALSE,
       'ReceiverStatus' => TRUE,
       'SetBillExpired' => TRUE,
-      'SetPayedByReceiver' => TRUE,
+      'SetPaidByReceiver' => TRUE,
       'SetRejectedByPayer' => TRUE,
       'PaymentStatus' => TRUE,
       'UpdatePaymentNotificationUrl' => TRUE,
+      'ReceiverBanks' => TRUE,
+      'GetPaymentNotification' => TRUE,
     );
   }
 
