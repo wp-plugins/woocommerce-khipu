@@ -48,7 +48,7 @@ class KhipuServiceVerifyPaymentNotification extends KhipuService {
       // Si existe la llave en $_POST entonces asignamos su valor
       // a $data
       if (isset($_POST[$key])) {
-	$this->data[$key] = $_POST[$key];
+        $this->data[$key] = $_POST[$key];
       }
     }
   }
@@ -60,7 +60,6 @@ class KhipuServiceVerifyPaymentNotification extends KhipuService {
   public function verify() {
     // Pasamos los datos a string
     $data = $this->dataToString();
-    echo print_r($data);
     // Iniciamos CURL
     $ch = curl_init($this->apiUrl);
     curl_setopt($ch, CURLOPT_HEADER, 0);

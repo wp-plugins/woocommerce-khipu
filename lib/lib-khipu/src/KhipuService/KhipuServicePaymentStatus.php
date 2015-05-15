@@ -1,4 +1,5 @@
 <?php
+
 /**
  * (c) Nicolas Moncada <nicolas.moncada@tifon.cl>
  *
@@ -9,38 +10,35 @@
 require_once 'KhipuService.php';
 
 /**
- * Servicio KhipuServiceUpdatePaymentNotificationUrl extiende de KhipuService
+ * Servicio KhipuServicePaymentStatus extiende de KhipuService
  *
- * Este servicio configura la version de notificación de una cuenta.
+ * Este servicio consulta el estado de un pago
  */
-class KhipuServiceUpdatePaymentNotificationUrl extends KhipuService {
+class KhipuServicePaymentStatus extends KhipuService {
   /**
    * Iniciamos el servicio
    */
   public function __construct($receiver_id, $secret) {
     parent::__construct($receiver_id, $secret);
     // Asignamos la url del servicio
-    $this->apiUrl = Khipu::getUrlService('UpdatePaymentNotificationUrl');
+    $this->apiUrl = Khipu::getUrlService('PaymentStatus');
     $this->data = array(
-      'url'         => '',
-      'api_version' => '',
+      'payment_id'  => '',
     );
   }
 
   /**
-   * Método quue envia la solicitud de actualizar.
-   *
-   * @return bool
+   * Método para consultar el estado.
    */
-  public function update() {
+  public function consult() {
     $string_data = $this->dataToString();
 
     $data_to_send = array(
-      'hash'        => $this->doHash($string_data),
+      'hash' => $this->doHash($string_data),
       'receiver_id' => $this->receiver_id,
-      'url'         => $this->data['url'],
-      'api_version' => $this->data['api_version'],
+      'payment_id' => $this->data['payment_id'],
     );
+    $data_to_send['agent'] = $this->agent;
 
     $ch = curl_init();
     curl_setopt($ch, CURLOPT_URL, $this->apiUrl);
@@ -48,19 +46,22 @@ class KhipuServiceUpdatePaymentNotificationUrl extends KhipuService {
     curl_setopt($ch, CURLOPT_POST, TRUE);
     curl_setopt($ch, CURLOPT_POSTFIELDS, $data_to_send);
 
-    $this->message = curl_exec($ch);
+    $output = curl_exec($ch);
     $info = curl_getinfo($ch);
     curl_close($ch);
-
-    return $info['http_code'] == 200;
+    if ($info['http_code'] == 200) {
+      return $output;
+    }
+    else {
+      $this->message = $output;
+      return FALSE;
+    }
   }
 
   protected function dataToString() {
     $string = '';
-    $string .= 'receiver_id='   . $this->receiver_id;
-    $string .= '&url='          . $this->data['url'];
-    $string .= '&api_version='  . $this->data['api_version'];
-    $string .= '&secret='       . $this->secret;
+    $string .= 'receiver_id='     . $this->receiver_id;
+    $string .= '&payment_id='      . $this->data['payment_id'];
     return trim($string);
   }
 }
