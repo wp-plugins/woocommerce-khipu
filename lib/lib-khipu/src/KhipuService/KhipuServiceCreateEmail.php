@@ -106,6 +106,8 @@ class KhipuServiceCreateEmail extends KhipuService {
     foreach ($this->data as $name => $value) {
       $data_to_send[$name] = $value;
     }
+    $data_to_send['agent'] = $this->agent;
+
     // Iniciamos CURL
     $ch = curl_init();
     curl_setopt($ch, CURLOPT_URL, $this->apiUrl);
@@ -131,19 +133,16 @@ class KhipuServiceCreateEmail extends KhipuService {
    */
   private function prepareOutput($json) {
     $decode = json_decode($json);
-
     $payment = array(
       'bill_id' => $decode->id,
       'list' => array(),
     );
 
-    foreach ($decode->links as $mail => $link) {
-      $link_explode = explode('/', $link);
-      $id = end($link_explode);
+    foreach ($decode->payments as $data) {
       $payment['list'][$id] = array(
-        'link'        => $link,
-        'mail'        => $mail,
-        'payment_id'  => $id,
+        'link'        => $data->url,
+        'mail'        => $data->email,
+        'payment_id'  => $data->id,
       );
     }
 
@@ -172,7 +171,6 @@ class KhipuServiceCreateEmail extends KhipuService {
     $string .= '&return_url='     . $this->data['return_url'];
     $string .= '&cancel_url='     . $this->data['cancel_url'];
     $string .= '&picture_url='    . $this->data['picture_url'];
-    $string .= '&secret='         . $this->secret;
     return trim($string);
   }
 }

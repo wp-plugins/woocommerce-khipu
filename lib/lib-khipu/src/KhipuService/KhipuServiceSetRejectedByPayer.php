@@ -10,34 +10,39 @@
 require_once 'KhipuService.php';
 
 /**
- * Servicio KhipuServicePaymentStatus extiende de KhipuService
+ * Servicio KhipuServiceSetRejectedByPayer extiende de KhipuService
  *
- * Este servicio consulta el estado de un pago
+ * Este servicio marca un pago como rechazado
  */
-class KhipuServicePaymentStatus extends KhipuService {
+class KhipuServiceSetRejectedByPayer extends KhipuService {
   /**
    * Iniciamos el servicio
    */
   public function __construct($receiver_id, $secret) {
     parent::__construct($receiver_id, $secret);
     // Asignamos la url del servicio
-    $this->apiUrl = Khipu::getUrlService('PaymentStatus');
+    $this->apiUrl = Khipu::getUrlService('SetRejectedByPayer');
     $this->data = array(
       'payment_id'  => '',
+      'text'        => '',
     );
   }
 
   /**
-   * Método para consultar el estado.
+   * Método que envia la solicitud
+   *
+   * @return bool
    */
-  public function consult() {
+  public function set() {
     $string_data = $this->dataToString();
 
     $data_to_send = array(
       'hash' => $this->doHash($string_data),
       'receiver_id' => $this->receiver_id,
       'payment_id' => $this->data['payment_id'],
+      'text'       => $this->data['text'],
     );
+    $data_to_send['agent'] = $this->agent;
 
     $ch = curl_init();
     curl_setopt($ch, CURLOPT_URL, $this->apiUrl);
@@ -45,23 +50,18 @@ class KhipuServicePaymentStatus extends KhipuService {
     curl_setopt($ch, CURLOPT_POST, TRUE);
     curl_setopt($ch, CURLOPT_POSTFIELDS, $data_to_send);
 
-    $output = curl_exec($ch);
+    $this->message = curl_exec($ch);
     $info = curl_getinfo($ch);
     curl_close($ch);
-    if ($info['http_code'] == 200) {
-      return $output;
-    }
-    else {
-      $this->message = $output;
-      return FALSE;
-    }
+
+    return $info['http_code'] == 200;
   }
 
   protected function dataToString() {
     $string = '';
     $string .= 'receiver_id='     . $this->receiver_id;
-    $string .= '&payment_id='      . $this->data['payment_id'];
-    $string .= '&secret='         . $this->secret;
+    $string .= '&payment_id='     . $this->data['payment_id'];
+    $string .= '&text='           . $this->data['text'];
     return trim($string);
   }
 }

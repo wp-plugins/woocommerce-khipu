@@ -10,21 +10,20 @@
 require_once 'KhipuService.php';
 
 /**
- * Servicio SetBillExpired extiende de KhipuService
+ * Servicio KhipuServiceSetPayedByReceiver extiende de KhipuService
  *
- * Este servicio marca un cobro como expirado
+ * Este servicio marca un pago como pagado
  */
-class KhipuServiceSetBillExpired extends KhipuService {
+class KhipuServiceSetPayedByReceiver extends KhipuService {
   /**
    * Iniciamos el servicio
    */
   public function __construct($receiver_id, $secret) {
     parent::__construct($receiver_id, $secret);
     // Asignamos la url del servicio
-    $this->apiUrl = Khipu::getUrlService('SetBillExpired');
+    $this->apiUrl = Khipu::getUrlService('SetPayedByReceiver');
     $this->data = array(
-      'bill_id'     => '',
-      'text'        => '',
+      'payment_id'     => '',
     );
   }
 
@@ -39,9 +38,10 @@ class KhipuServiceSetBillExpired extends KhipuService {
     $data_to_send = array(
       'hash' => $this->doHash($string_data),
       'receiver_id' => $this->receiver_id,
-      'bill_id' => $this->data['bill_id'],
-      'text' => $this->data['text'],
+      'payment_id' => $this->data['payment_id'],
     );
+    $data_to_send['agent'] = $this->agent;
+
     $ch = curl_init();
     curl_setopt($ch, CURLOPT_URL, $this->apiUrl);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
@@ -58,9 +58,7 @@ class KhipuServiceSetBillExpired extends KhipuService {
   protected function dataToString() {
     $string = '';
     $string .= 'receiver_id='     . $this->receiver_id;
-    $string .= '&bill_id='        . $this->data['bill_id'];
-    $string .= '&text='           . $this->data['text'];
-    $string .= '&secret='         . $this->secret;
+    $string .= '&payment_id='     . $this->data['payment_id'];
     return trim($string);
   }
 }

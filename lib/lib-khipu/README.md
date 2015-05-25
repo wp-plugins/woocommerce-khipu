@@ -1,8 +1,8 @@
 # Khipu
 
-Versión Biblioteca: 1.1.2
+Versión Biblioteca: 1.3
 
-Versión API Khipu: 1.1
+Versión API Khipu: 1.3
 
 Biblioteca PHP para utilizar los servicios de Khipu.com
 
@@ -10,21 +10,24 @@ La documentación de Khipu.com se puede ver desde aquí: https://khipu.com/page/
 
 ## Introducción
 
-Khipu cuenta con varios servicios, algunos de ellos:
+La API de Khipu cuenta con varios servicios, los cuales son:
 
-1) Crear Cobros y enviarlos por Mail.
-
-2) Crear Página de Pago.
-
-3) Recibiendo y validando la notificación de un pago.
-
-4) Verificar Estado de una cuenta Khipu.
+* Ver estado de la cuenta Khipu
+* Crear un botón de pago
+* Crear un cobro por Mail
+* Crear URL para un pago
+* Expirar un cobro
+* Consultar estado de un pago
+* Marcar un pago como pagado
+* Marcar un pago como rechazado
+* Actualizar versión de la notificación
+* Obtener listado de bancos
 
 Para utilizar estos servicios se debe cargar el archivo Khipu.php
 
-En la carpeta examples existen otros ejemplos.
 
-## 1) Crear Cobros y enviarlos por Mail
+## Algunos Ejemplos
+### 1) Crear Cobros y enviarlos por Mail
 
 Para crear cobros, necesitamos identificar al cobrador y a los destinatarios.
 A continuación un ejemplo
@@ -73,7 +76,7 @@ A continuación un ejemplo
 
 ```
 
-## 2) Crear Página de Pago
+### 2) Crear Página de Pago
 
 Crear una página de pago también se requiere identificarse, a continuación un
 ejemplo:
@@ -114,7 +117,7 @@ ejemplo:
 
 ```
 
-## 3) Recibiendo y validando la notificación de un pago
+### 3) Recibiendo y validando la notificación de un pago
 
 Este servicio debe ser utilizado en la página que recibirá el POST desde
 Khipu y no require identificar al cobrador.
@@ -127,18 +130,39 @@ A continuación un ejemplo:
 
   $Khipu = new Khipu();
   // No necesitamos identificar al cobrador para usar este servicio.
-  $khipu_service = $Khipu->loadService('VerifyPaymentNotification');
-  // Adjuntamos los valores del $_POST en el servicio.
-  $khipu_service->setDataFromPost();
-  // Hacemos una solicitud a Khipu para verificar.
-  $response = $khipu_service->verify();
-  if ($response['response'] == 'VERIFIED') {
-    // Hacemos algo al respecto...
+
+  $api_version = $_POST['api_version'];
+
+  if($api_version == '1.2') {
+	$khipu_service = $Khipu->loadService('VerifyPaymentNotification');
+  	$khipu_service->setDataFromPost();
+	$response = $khipu_service->verify();
+	if($response['response'] == 'VERIFIED'){
+		//el pago esta verificado, hacemos algo al respecto
+	}
+
+  } else if ($api_version == '1.3') {
+	$Khipu->authenticate($receiver_id, $llave);
+	$khipu_service = $Khipu->loadService('GetPaymentNotification');
+  	$khipu_service->setDataFromPost();
+	$response = json_decode($khipu_service->consult());
+	
+	// validamos que la notificacion de pago corresponda con una solicitud de pago esperada
+	if($response->transaction_id == $mi_transaction_id &&  $response->receiver_id == $receiver_id, $response->amount == $mi_amount) {
+		// la notificacion esta ok, la estaba esperando y debo procesar el pedido
+	} else {
+		// la notificacion no es para mi o no la estaba esperando, la ignoro
+	}
+	
+
+  } else {
+	// api de notificacion no soportada
   }
+
 
 ```
 
-## 4) Verificar Estado de una cuenta Khipu
+### 4) Verificar Estado de una cuenta Khipu
 
 Este servicio permite consultar el estado de una cuenta khipu, la cual retorna
 un json mencionando el ambiente en que se encuentra y si puede recibir pagos.
@@ -157,6 +181,8 @@ A continuación un ejemplo:
 
 ```
 
+En la carpeta examples existen otros ejemplos.
+
 ## Extra
 
 La clase Khipu cuenta con dos funciones estáticas, las cuales son:
@@ -167,7 +193,7 @@ La clase Khipu cuenta con dos funciones estáticas, las cuales son:
   // ...
   require_once "Khipu.php";
 
-  // Imprime https://khipu.com/api/1.1/verifyPaymentNotification
+  // Imprime https://khipu.com/api/1.3/verifyPaymentNotification
   echo Khipu::getUrlService('VerifyPaymentNotification');
 ?>
 ```

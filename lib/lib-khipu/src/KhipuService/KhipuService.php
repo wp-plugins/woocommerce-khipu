@@ -56,6 +56,12 @@ abstract class KhipuService {
     $this->secret = $secret;
   }
 
+  protected $agent;
+  public function setAgent($agent) {
+      $this->agent = $agent;
+      return $this;
+  }
+
   /**
    * Genera el Hash que requiere Khipu.
    *
@@ -65,7 +71,7 @@ abstract class KhipuService {
    * @return string
    */
   protected function doHash($string) {
-    return sha1($string);
+    return hash_hmac('sha256', $string, $this->secret);
   }
 
   /**
