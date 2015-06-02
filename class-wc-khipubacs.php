@@ -5,29 +5,29 @@ if (!defined('ABSPATH')) {
 } // Exit if accessed directly
 
 /**
- * Plugin Name: WooCommerce khipu
+ * Plugin Name: WooCommerce khipubacs
  * Plugin URI: https://khipu.com
- * Description: khipu payment gateway for woocommerce
+ * Description: khipu powered direct transfer payment gateway for woocommerce
  * Version: 2.2
  * Author: khipu
  * Author URI: https://khipu.com
  */
 
-add_action('plugins_loaded', 'woocommerce_khipu_init', 0);
+add_action('plugins_loaded', 'woocommerce_khipubacs_init', 0);
 
 
-function woocommerce_khipu_showWooCommerceNeeded()
+function woocommerce_khipubacs_showWooCommerceNeeded()
 {
-    woocommerce_khipu_showMessage("Debes instalar y activar el plugin WooCommerce. El plugin de khipu se deshabilitará hasta que esto este corregido.", true);
+    woocommerce_khipubacs_showMessage("Debes instalar y activar el plugin WooCommerce. El plugin de khipu se deshabilitará hasta que esto este corregido.", true);
 }
 
-function woocommerce_khipu_orderReceivedHasSpaces()
+function woocommerce_khipubacs_orderReceivedHasSpaces()
 {
     woocommerce_khipu_showMessage("El 'endpoint' de Pedido recibido tiene espacios, debe ser una palabra sin espacios, para corregirlo anda a WooCommerce->Ajustes->Finalizar compra y corrige el valor en el campo 'Pedido recibido'. El plugin de khipu se deshabilitará hasta que esto este corregido.", true);
 }
 
 
-function woocommerce_khipu_showMessage($message, $errormsg = false)
+function woocommerce_khipubacs_showMessage($message, $errormsg = false)
 {
     if ($errormsg) {
         echo '<div id="message" class="error">';
@@ -40,20 +40,23 @@ function woocommerce_khipu_showMessage($message, $errormsg = false)
 }
 
 
-function woocommerce_khipu_init()
+function woocommerce_khipubacs_init()
 {
 
     require_once "lib/lib-khipu/src/Khipu.php";
 
     $orderReceived = isset( WC()->query->query_vars[ 'order-received' ] ) ? WC()->query->query_vars[ 'order-received' ] : 'order-received';
 
+
     if (!class_exists('WC_Payment_Gateway')) {
-        add_action('admin_notices', 'woocommerce_khipu_showWooCommerceNeeded');
+
+        add_action('admin_notices', 'woocommerce_khipubacs_showWooCommerceNeeded');
+
     } else if (strpos($orderReceived, ' ') !== false){
-        add_action('admin_notices', 'woocommerce_khipu_orderReceivedHasSpaces');
+        add_action('admin_notices', 'woocommerce_khipubacs_orderReceivedHasSpaces');
     } else {
 
-        class WC_Gateway_khipu extends WC_Payment_Gateway
+        class WC_Gateway_khipubacs extends WC_Payment_Gateway
         {
 
             var $notify_url;
@@ -64,10 +67,10 @@ function woocommerce_khipu_init()
              */
             public function __construct()
             {
-                $this->id = 'khipu';
-                $this->icon = plugins_url('images/buttons/110x25-transparent.png', __FILE__);
+                $this->id = 'khipubacs';
+                //$this->icon = plugins_url('images/buttons/50x25.png', __FILE__);
                 $this->has_fields = false;
-                $this->method_title = __('khipu - Transferencia simplificada', 'woocommerce');
+                $this->method_title = __('Trasferencia normal', 'woocommerce');
                 $this->notify_url = add_query_arg('wc-api', 'WC_Gateway_' . $this->id, home_url('/'));
 
                 // Load the settings and init variables.
@@ -110,7 +113,7 @@ function woocommerce_khipu_init()
             {
                 ?>
                 <h3><?php _e('khipu', 'woocommerce'); ?></h3>
-                <p><?php _e('khipu muestra el listado de bancos soportados y levanta el terminal de pagos o redirige a la página de confirmación de pago según se necesite.', 'woocommerce'); ?></p>
+                <p><?php _e('khipu informa al pagador de la transferencia que debe realizar y luego concilia y notifica al comercio del pago realizado.', 'woocommerce'); ?></p>
 
                 <?php if ($this->is_valid_for_use()) : ?>
                 <table class="form-table">
@@ -147,21 +150,19 @@ function woocommerce_khipu_init()
                         'title' => __('Title', 'woocommerce'),
                         'type' => 'text',
                         'description' => __('This controls the title which the user sees during checkout.', 'woocommerce'),
-                        'default' => __('Transferencia simplificada', 'woocommerce'),
+                        'default' => __('Transferencia normal', 'woocommerce'),
                         'desc_tip' => true
                     ),
                     'description' => array(
                         'title' => __('Description', 'woocommerce'),
                         'type' => 'textarea',
                         'description' => __('Payment method description that the customer will see on your checkout.', 'woocommerce'),
-
-                        'default' => __('khipu es una aplicación simple y segura para pagar con'
-                            .'tu banco a través de una transferencia, evita errores'
-                            .'al escribir datos y brinda protección adicional contra'
-                            .'algunos tipos de ataque, como lo son el Phishing y la'
-                            .'clonación de datos. Si no has instalado la aplicación,'
-                            .'la página de pago te ayudará a instalarla. ESTA ES LA'
-                            .'OPCIÓN RECOMENDADA.', 'woocommerce')
+                        'default' => __('Debes ingresar el rut de la cuenta corriente o vista con'
+                                        .'que pagarás, luego se te entregarán todos los datos'
+                                        .'para que puedas realizar la transferencia desde el'
+                                        .'portal web o móvil de tu banco. Debes tener cuidado, el'
+                                        .'monto a transferir debe ser el que se te ha informado'
+                                        .'que realices, así el pago se procesará con éxito.')
                     ),
                     'receiver_id' => array(
                         'title' => __('Id de cobrador', 'woocommerce'),
@@ -181,17 +182,6 @@ function woocommerce_khipu_init()
 
             }
 
-            /**
-             * Get banks for this receiver_id
-             */
-            function get_available_banks()
-            {
-                $Khipu = new Khipu();
-                $Khipu->authenticate($this->receiver_id, $this->secret);
-                $Khipu->setAgent('woocommerce-khipu-2.2;;'.site_url().';;'.bloginfo('name'));
-                $service = $Khipu->loadService('ReceiverBanks');
-                return $service->consult();
-            }
 
             function comm_error()
             {
@@ -200,139 +190,16 @@ function woocommerce_khipu_init()
             }
 
             /**
-             * Create the combos to select bank and bank type.
-             */
-            function generate_khipu_bankselect()
-            {
-
-                $banks = json_decode($this->get_available_banks());
-
-                if (!$banks) {
-                    return $this->comm_error();
-                }
-
-                $bankSelector = "<form method=\"POST\">\n";
-
-                foreach ($_REQUEST as $key => $value) {
-                    $bankSelector .= "<input type=\"hidden\" value =\"$value\" name=\"$key\">\n";
-                }
-
-                $send_label = __('Pagar');
-                $bank_selector_label = __('Selecciona tu banco:');
-                $bankSelector .= <<<EOD
-
-<div class="form-row form-row-wide">
-    <label for="bank-id"><span class="required">*</span> <strong>$bank_selector_label</strong></label>
-    <select id="root-bank" name="root-bank" style="width: auto;"></select>
-	<select id="bank-id" name="bank-id" style="display: none; width: auto;"></select>
-</div>
-<div class="form-row form-row-wide">
-	<input type="submit" value="$send_label">
-</div>
-
-</form>
-<script>
-	(function ($) {
-		var messages = [];
-		var bankRootSelect = $('#root-bank')
-		var bankOptions = []
-		var selectedRootBankId = 0
-		var selectedBankId = 0
-		bankRootSelect.attr("disabled", "disabled");
-EOD;
-
-                foreach ($banks->banks as $bank) {
-                    if (!$bank->parent) {
-                        $bankSelector .= "bankRootSelect.append('<option value=\"$bank->id\">$bank->name</option>');\n";
-                        $bankSelector .= "bankOptions['$bank->id'] = [];\n";
-                        $bankSelector .= "bankOptions['$bank->id'].push('<option value=\"$bank->id\">$bank->type</option>')\n";
-                    } else {
-                        $bankSelector .= "bankOptions['$bank->parent'].push('<option value=\"$bank->id\">$bank->type</option>');\n";
-                    }
-                }
-                $bankSelector .= <<<EOD
-	function updateBankOptions(rootId, bankId) {
-		if (rootId) {
-			$('#root-bank').val(rootId)
-		}
-
-		var idx = $('#root-bank :selected').val();
-		$('#bank-id').empty();
-		var options = bankOptions[idx];
-		for (var i = 0; i < options.length; i++) {
-			$('#bank-id').append(options[i]);
-		}
-		if (options.length > 1) {
-			$('#root-bank').addClass('form-control-left');
-			$('#bank-id').show();
-		} else {
-			$('#root-bank').removeClass('form-control-left');
-			$('#bank-id').hide();
-		}
-		if (bankId) {
-			$('#bank-id').val(bankId);
-		}
-		$('#bank-id').change();
-	}
-	$('#root-bank').change(function () {
-		updateBankOptions();
-	});
-	$(document).ready(function () {
-		updateBankOptions(selectedRootBankId, selectedBankId);
-		bankRootSelect.removeAttr("disabled");
-	});
-})(jQuery);
-</script>
-EOD;
-
-                return $bankSelector;
-            }
-
-
-            function generate_khipu_terminal_page()
-            {
-
-                $json_string = $this->base64url_decode_uncompress($_REQUEST['payment-data']);
-
-                $response = json_decode($json_string);
-
-                $readyForTerminal = 'ready-for-terminal';
-
-                if (!$response->$readyForTerminal) {
-                    wp_redirect($response->url);
-                    return;
-                }
-
-                // Add the external libraries
-                wp_enqueue_script('atmosphere', '//cdnjs.cloudflare.com/ajax/libs/atmosphere/2.1.2/atmosphere.min.js');
-                wp_enqueue_script('khipu-js', '//storage.googleapis.com/installer/khipu-1.1.js', array('jquery'));
-
-                $waitMsg = __('Estamos iniciando el terminal de pagos khipu, por favor espera unos minutos.<br>No cierres esta página, una vez que completes el pago serás redirigido automáticamente.');
-                $out = <<<EOD
-<div id="wait-msg" class="woocommerce-info">$waitMsg</div>
-<div id="khipu-chrome-extension-div" style="display: none"></div>
-<script>
-window.onload = function () {
-    KhipuLib.onLoad({
-        data: $json_string
-    })
-}
-</script>
-EOD;
-                return $out;
-            }
-
-            /**
              * Create the payment on khipu and try to start the app.
              */
-            function generate_khipu_generate_payment($order_id)
+            function generate_khipubacs_submit_button($order_id)
             {
 
                 $order = new WC_Order($order_id);
 
                 $Khipu = new Khipu();
                 $Khipu->authenticate($this->receiver_id, $this->secret);
-                $Khipu->setAgent('woocommerce-khipu-2.2;;'.site_url().';;'.bloginfo('name'));
+                $Khipu->setAgent('woocommerce-khipubacs-2.2;;'.site_url().';;'.bloginfo('name'));
                 $create_page_service = $Khipu->loadService('CreatePaymentURL');
 
                 $item_names = array();
@@ -352,28 +219,21 @@ EOD;
                 $create_page_service->setParameter('custom', serialize(array($order_id, $order->order_key)));
                 $create_page_service->setParameter('payer_email', $order->billing_email);
                 $create_page_service->setParameter('notify_url', $this->notify_url);
-                $create_page_service->setParameter('bank_id', $_REQUEST['bank-id']);
+                $create_page_service->setParameter('bank_id', '');
                 $create_page_service->setParameter('return_url', $this->get_return_url($order));
 
-                // We need the string json to use it with the khipu.js
                 $json_string = $create_page_service->createUrl();
+                $response = json_decode($json_string);
 
-                if (!$json_string) {
+                if (!$response) {
                     return $this->comm_error();
                 }
 
+                $manualUrl = 'manual-url';
 
-                wp_redirect(add_query_arg(array('payment-data' => $this->base64url_encode_compress($json_string)), remove_query_arg(array('bank-id'), wp_get_referer())));
-
+                wp_redirect($response->$manualUrl);
                 return;
-            }
 
-            function base64url_encode_compress($data) {
-                return rtrim(strtr(base64_encode(gzcompress($data)), '+/', '-_'), '=');
-            }
-
-            function base64url_decode_uncompress($data) {
-                return gzuncompress(base64_decode(str_pad(strtr($data, '-_', '+/'), strlen($data) % 4, '=', STR_PAD_RIGHT)));
             }
 
             /**
@@ -389,13 +249,7 @@ EOD;
              */
             function receipt_page($order)
             {
-                if (isset($_REQUEST['payment-data'])) {
-                    echo $this->generate_khipu_terminal_page();
-                } else if (isset($_REQUEST['bank-id'])) {
-                    echo $this->generate_khipu_generate_payment($order);
-                } else {
-                    echo $this->generate_khipu_bankselect();
-                }
+                echo $this->generate_khipubacs_submit_button($order);
             }
 
             /**
@@ -424,7 +278,7 @@ EOD;
             function get_order_from_ipn_1_2() {
                 $Khipu = new Khipu();
                 $Khipu->authenticate($this->receiver_id, $this->secret);
-                $Khipu->setAgent('woocommerce-khipu-2.2;;'.site_url().';;'.bloginfo('name'));
+                $Khipu->setAgent('woocommerce-khipubacs-2.2;;'.site_url().';;'.bloginfo('name'));
                 $service = $Khipu->loadService('VerifyPaymentNotification');
                 $service->setDataFromPost();
                 if ($_POST['receiver_id'] != $this->receiver_id) {
@@ -433,7 +287,7 @@ EOD;
 
                 $verify = $service->verify();
                 if($verify['response'] == 'VERIFIED'){
-                    return $this->get_khipu_order($_POST['custom'], $_POST['transaction_id']);
+                    return $this->get_khipubacs_order($_POST['custom'], $_POST['transaction_id']);
                 }
                 return false;
             }
@@ -444,14 +298,14 @@ EOD;
             function get_order_from_ipn_1_3() {
                 $Khipu = new Khipu();
                 $Khipu->authenticate($this->receiver_id, $this->secret);
-                $Khipu->setAgent('woocommerce-khipu-2.2;;'.site_url().';;'.bloginfo('name'));
+                $Khipu->setAgent('woocommerce-khipubacs-2.2;;'.site_url().';;'.bloginfo('name'));
                 $service = $Khipu->loadService('GetPaymentNotification');
                 $service->setDataFromPost();
                 $response = json_decode($service->consult());
                 if ($response->receiver_id != $this->receiver_id) {
                     return false;
                 }
-                $order = $this->get_khipu_order($response->custom, $response->transaction_id);
+                $order = $this->get_khipubacs_order($response->custom, $response->transaction_id);
 
                 if($order) {
                     return $order;
@@ -476,12 +330,11 @@ EOD;
 
                 if($order) {
                     header('HTTP/1.1 200 OK');
-                    do_action("valid-khipu-ipn-request", $order);
+                    do_action("valid-khipubacs-ipn-request", $order);
                     return;
                 }
 
             }
-
 
             /**
              * Successful Payment
@@ -491,15 +344,17 @@ EOD;
                 if ($order->status == 'completed') {
                     exit;
                 }
-                $order->add_order_note(__('Pago con khipu verificado', 'woocommerce'));
+                $order->add_order_note(__('Pago con khipubacs verificado', 'woocommerce'));
                 $order->payment_complete();
             }
+
+
 
 
             /**
              * get_khipu_order function.
              */
-            function get_khipu_order($custom, $transaction_id)
+            function get_khipubacs_order($custom, $transaction_id)
             {
                 $custom = maybe_unserialize($custom);
 
@@ -537,21 +392,21 @@ EOD;
         /**
          * Add the Gateway to WooCommerce
          **/
-        function woocommerce_add_khipu_gateway($methods)
+        function woocommerce_add_khipubacs_gateway($methods)
         {
-            $methods[] = 'WC_Gateway_khipu';
+            $methods[] = 'WC_Gateway_khipubacs';
             return $methods;
         }
 
-        add_filter('woocommerce_payment_gateways', 'woocommerce_add_khipu_gateway');
+        add_filter('woocommerce_payment_gateways', 'woocommerce_add_khipubacs_gateway');
 
-        function woocommerce_khipu_add_clp_currency($currencies)
+        function woocommerce_khipubacs_add_clp_currency($currencies)
         {
             $currencies["CLP"] = __('Pesos Chilenos');
             return $currencies;
         }
 
-        function woocommerce_khipu_add_clp_currency_symbol($currency_symbol, $currency)
+        function woocommerce_khipubacs_add_clp_currency_symbol($currency_symbol, $currency)
         {
             switch ($currency) {
                 case 'CLP':
@@ -561,8 +416,9 @@ EOD;
             return $currency_symbol;
         }
 
-        add_filter('woocommerce_currencies', 'woocommerce_khipu_add_clp_currency', 10, 1);
-        add_filter('woocommerce_currency_symbol', 'woocommerce_khipu_add_clp_currency_symbol', 10, 2);
+        add_filter('woocommerce_currencies', 'woocommerce_khipubacs_add_clp_currency', 10, 1);
+        add_filter('woocommerce_currency_symbol', 'woocommerce_khipubacs_add_clp_currency_symbol', 10, 2);
+
     }
 
 }

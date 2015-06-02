@@ -2,7 +2,7 @@
 
 /**
  * (c) Nicolas Moncada <nicolas.moncada@tifon.cl>
- * 
+ *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
@@ -10,19 +10,19 @@
 require_once 'KhipuService.php';
 
 /**
- * Servicio CreatePaymentPage que extiende de KhipuService.
- * 
- * Este servicio facilita la creación del boton de pago.
+ * Servicio CreatePaymentURL que extiende de KhipuService.
+ *
+ * Este servicio facilita la creación de un pago.
  */
-class KhipuServiceCreatePaymentPage extends KhipuService {
-  
+class KhipuServiceCreatePaymentURL extends KhipuService {
+
   /**
    * Iniciamos el servicio
    */
   public function __construct($receiver_id, $secret) {
     parent::__construct($receiver_id, $secret);
     // Iniciamos la variable apiUrl con la url del servicio.
-    $this->apiUrl = Khipu::getUrlService('CreatePaymentPage');
+    $this->apiUrl = Khipu::getUrlService('CreatePaymentURL');
     // Iniciamos el arreglo $data con los valores que requiere el servicio.
     $this->data = array(
       'receiver_id' => $receiver_id,
@@ -33,65 +33,47 @@ class KhipuServiceCreatePaymentPage extends KhipuService {
       'notify_url' => '',
       'return_url' => '',
       'cancel_url' => '',
+      'bank_id' => '',
+      'expires_date' => '',
       'transaction_id' => '',
       'picture_url' => '',
       'payer_email' => '',
     );
   }
-  
+
+
   /**
-   * Método que genera el formulario de pago en HTML
-   * 
-   * @param string $button_type
-   *   Dimensión del boton a mostrar
-   * 
-   * @return string
-   *   Formulario renderizado
+   * Metodo que solicita la generacion de la url
    */
-  public function renderForm($button_url) {
-    $values = $this->getFormLabels();
-    $html = new DOMDocument();
-    $html->formatOutput = true;
-    
-    $form = $html->createElement('form');
-    $form->setAttribute('action', $this->getApiUrl());
-    $form->setAttribute('method', 'POST');
-    foreach($values as $name => $value) {
-      $input_hidden = $html->createElement('input');
-      $input_hidden->setAttribute('type', 'hidden');
-      $input_hidden->setAttribute('name', $name);
-      $input_hidden->setAttribute('value', $value);
-      $form->appendChild($input_hidden);
-    }
-    
-    $submit = $html->createElement('input');
-    $submit->setAttribute('type', 'image');
-    $submit->setAttribute('src', $button_url);
-    
-    $form->appendChild($submit);
-    
-    $html->appendChild($form);
-    
-    return $html->saveHTML();
-  }
-  
-  
-  /**
-   * Método que retorna los datos requeridos para hacer el formulario
-   * adjuntando el hash.
-   */
-  public function getFormLabels() {
-    // Pasamos los datos a string
+  public function createUrl() {
     $string_data = $this->dataToString();
-    $values = array(
+    $data_to_send = array(
       'hash' => $this->doHash($string_data),
     );
+    // Adicionalmente adjuntamos el resto de los valores iniciados en $data
     foreach ($this->data as $name => $value) {
-      $values[$name] = $value;
+      $data_to_send[$name] = $value;
     }
-    return $values;
+    $data_to_send['agent'] = $this->agent;
+
+    // Iniciamos CURL
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $this->apiUrl);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+    curl_setopt($ch, CURLOPT_POST, TRUE);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, $data_to_send);
+
+    $output = curl_exec($ch);
+    $info = curl_getinfo($ch);
+    curl_close($ch);
+    if ($info['http_code'] == 200) {
+      return $output;
+    }
+    else {
+      return FALSE;
+    }
   }
-  
+
   protected function dataToString() {
     $string = '';
     $string .= 'receiver_id=' . $this->data['receiver_id'];
@@ -99,13 +81,14 @@ class KhipuServiceCreatePaymentPage extends KhipuService {
     $string .= '&body=' . $this->data['body'];
     $string .= '&amount=' . $this->data['amount'];
     $string .= '&payer_email=' . $this->data['payer_email'];
+    $string .= '&bank_id=' . $this->data['bank_id'];
+    $string .= '&expires_date=' . $this->data['expires_date'];
     $string .= '&transaction_id=' . $this->data['transaction_id'];
     $string .= '&custom=' . $this->data['custom'];
     $string .= '&notify_url=' . $this->data['notify_url'];
     $string .= '&return_url=' . $this->data['return_url'];
     $string .= '&cancel_url=' . $this->data['cancel_url'];
     $string .= '&picture_url=' . $this->data['picture_url'];
-    $string .= '&secret=' . $this->secret; 
     return $string;
   }
 }

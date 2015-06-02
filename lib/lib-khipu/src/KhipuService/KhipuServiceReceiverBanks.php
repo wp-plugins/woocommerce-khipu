@@ -10,24 +10,22 @@
 require_once 'KhipuService.php';
 
 /**
- * Servicio ReceiverStatus extiende de KhipuService
+ * Servicio ReceiverBanks extiende de KhipuService
  *
- * Esta clase verifica el estado y algunas capacidades de una cuenta khipu
+ * Este servicio consulta por los bancos.
  */
-class KhipuServiceReceiverStatus extends KhipuService {
-
-
+class KhipuServiceReceiverBanks extends KhipuService {
   /**
    * Iniciamos el servicio
    */
   public function __construct($receiver_id, $secret) {
     parent::__construct($receiver_id, $secret);
     // Asignamos la url del servicio
-    $this->apiUrl = Khipu::getUrlService('ReceiverStatus');
+    $this->apiUrl = Khipu::getUrlService('ReceiverBanks');
   }
 
   /**
-   * Método que consulta por el estado
+   * Método que consulta por los bancos.
    */
   public function consult() {
     $string_data = $this->dataToString();
@@ -36,7 +34,7 @@ class KhipuServiceReceiverStatus extends KhipuService {
       'hash' => $this->doHash($string_data),
       'receiver_id' => $this->receiver_id,
     );
-
+    $data_to_send['agent'] = $this->agent;
     $ch = curl_init();
     curl_setopt($ch, CURLOPT_URL, $this->apiUrl);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
@@ -53,7 +51,6 @@ class KhipuServiceReceiverStatus extends KhipuService {
   protected function dataToString() {
     $string = '';
     $string .= 'receiver_id='     . $this->receiver_id;
-    $string .= '&secret='         . $this->secret;
     return trim($string);
   }
 }
